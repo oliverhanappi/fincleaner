@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration xmlns="http://schemas.org/fincleaner/configuration/1.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Settings>
+    <ExportCulture>de</ExportCulture>
+    <FallbackAccountName>&lt;unknown&gt;</FallbackAccountName>
+    <FallbackAccountIBAN>&lt;unknown&gt;</FallbackAccountIBAN>
+    <FallbackAccountNumber>&lt;unknown&gt;</FallbackAccountNumber>
+    <FallbackDescription>&lt;unknown&gt;</FallbackDescription>
+  </Settings>
+  <FilePatterns defaultParser="MyDefaultBank" defaultRuleSet="MyDefaultBank">
+    <Pattern pattern="MyOtherBank_.*\.csv" parser="MyOtherBank" ruleSet="MyOtherBank"/>
+  </FilePatterns>
+  <FileParsers>
+    <Parser xsi:type="CsvParser" name="MyDefaultBank" encoding="utf-16" delimiter=";" header="true" culture="de">
+      <Date xsi:type="ColumnValueSource" columnIndex="0"/>
+      <Amount xsi:type="ColumnValueSource" columnIndex="6"/>
+      <AssetAccountName xsi:type="PatternValueSource">
+        <Source xsi:type="FileNameValueSource"/>
+        <Value pattern="AT483200000012345864" xsi:type="FixedPatternValue" value="My Debit Account"/>
+      </AssetAccountName>
+      <AssetAccountIBAN xsi:type="PatternValueSource">
+        <Source xsi:type="FileNameValueSource"/>
+        <Value pattern="AT483200000012345864" xsi:type="FixedPatternValue" value="AT483200000012345864"/>
+      </AssetAccountIBAN>
+      <AssetAccountNumber xsi:type="PatternValueSource">
+        <Source xsi:type="FileNameValueSource"/>
+        <Value pattern="AT483200000012345864" xsi:type="FixedPatternValue" value="12345864"/>
+      </AssetAccountNumber>
+      <OppositeAccountName xsi:type="ColumnValueSource" columnIndex="1"/>
+      <OppositeAccountIBAN xsi:type="ColumnValueSource" columnIndex="2"/>
+      <OppositeAccountNumber xsi:type="ColumnValueSource" columnIndex="4"/>
+      <Description xsi:type="ColumnValueSource" columnIndex="7"/>
+      <Reference xsi:type="ColumnValueSource" columnIndex="8"/>
+    </Parser>
+    <Parser xsi:type="CsvParser" name="MyOtherBank" encoding="iso-8859-1" delimiter=";" header="false" culture="de" mode="NoEscape">
+      <Date xsi:type="ColumnValueSource" columnIndex="2"/>
+      <Amount xsi:type="ColumnValueSource" columnIndex="4"/>
+      <AssetAccountName xsi:type="PatternValueSource">
+        <Source xsi:type="ColumnValueSource" columnIndex="0"/>
+        <Value pattern="DE75512108001245126199" xsi:type="FixedPatternValue" value="Shared Account"/>
+      </AssetAccountName>
+      <AssetAccountIBAN xsi:type="PatternValueSource">
+        <Source xsi:type="ColumnValueSource" columnIndex="0"/>
+        <Value pattern="DE75512108001245126199" xsi:type="FixedPatternValue" value="DE75512108001245126199"/>
+      </AssetAccountIBAN>
+      <AssetAccountNumber xsi:type="PatternValueSource">
+        <Source xsi:type="ColumnValueSource" columnIndex="0"/>
+        <Value pattern="DE75512108001245126199" xsi:type="FixedPatternValue" value="1245126199"/>
+      </AssetAccountNumber>
+      <OppositeAccountName xsi:type="PatternValueSource">
+        <Source xsi:type="ColumnValueSource" columnIndex="1"/>
+        <!-- Credit Card Format -->
+        <Value pattern="^(?'AccountName'[^|]+)\|.+$" xsi:type="MatchedPatternValue" groupName="AccountName">
+          <Replace pattern="[0-9][0-9\-]+[0-9]" value=""/>
+        </Value>
+        <!-- Debit Card Format -->
+        <Value pattern="K[0-9]+ [0-9]{2}\.[0-9]{2}\. [0-9]{2}:[0-9]{2}(?'AccountName'.+)$" xsi:type="MatchedPatternValue" groupName="AccountName"/>
+        <Value pattern="[A-Z]{2}[0-9]{16,}(?'AccountName'.+)$" xsi:type="MatchedPatternValue" groupName="AccountName"/>
+        <Value pattern="[A-Z]{2}/[0-9]{9}(?'AccountName'.+)$" xsi:type="MatchedPatternValue" groupName="AccountName"/>
+        <!-- Fallback -->
+        <Value pattern="^(?'TransactionInfo'.+)$" xsi:type="MatchedPatternValue" groupName="TransactionInfo"/>
+      </OppositeAccountName>
+      <OppositeAccountIBAN xsi:type="PatternValueSource">
+        <Source xsi:type="ColumnValueSource" columnIndex="1"/>
+        <Value pattern="(?'IBAN'[A-Z]{2}[0-9]{16,})" xsi:type="MatchedPatternValue" groupName="IBAN"/>
+      </OppositeAccountIBAN>
+      <OppositeAccountNumber xsi:type="PatternValueSource">
+        <Source xsi:type="ColumnValueSource" columnIndex="1"/>
+        <!-- Card Card Format -->
+        <Value pattern="^(?'AccountNumber'[^|]+)\|.+$" xsi:type="MatchedPatternValue" groupName="AccountNumber">
+          <Replace pattern="[0-9][0-9\-]+[0-9]" value=""/>
+        </Value>
+        <!-- Debit Card Format -->
+        <Value pattern="[A-Z]{2}[0-9]{16,}" xsi:type="FixedPatternValue" value=""/>
+        <Value pattern="K[0-9]+ [0-9]{2}\.[0-9]{2}\. [0-9]{2}:[0-9]{2}(?'AccountNumber'.+)$" xsi:type="MatchedPatternValue" groupName="AccountNumber"/>
+        <Value pattern="[A-Z]{2}/[0-9]{9}(?'AccountNumber'.+)$" xsi:type="MatchedPatternValue" groupName="AccountNumber"/>
+        <!-- Fallback -->
+        <Value pattern="^(?'TransactionInfo'.+)$" xsi:type="MatchedPatternValue" groupName="TransactionInfo"/>
+      </OppositeAccountNumber>
+      <Description xsi:type="PatternValueSource">
+        <Source xsi:type="ColumnValueSource" columnIndex="1"/>
+        <!-- Credit Card Format -->
+        <Value pattern="^(?'Description'[^|]+)\|.+$" xsi:type="MatchedPatternValue" groupName="Description"/>
+        <!-- Debit Card Format -->
+        <Value pattern="^(?'Description'.+)[A-Z]{2}/[0-9]{9}" xsi:type="MatchedPatternValue" groupName="Description"/>
+        <Value pattern="[A-Z]{2}/[0-9]{9}(?'Description'.+)$" xsi:type="MatchedPatternValue" groupName="Description"/>
+        <!-- Fallback -->
+        <Value pattern="^(?'TransactionInfo'.+)$" xsi:type="MatchedPatternValue" groupName="TransactionInfo"/>
+      </Description>
+      <Reference xsi:type="PatternValueSource">
+        <Source xsi:type="ColumnValueSource" columnIndex="1"/>
+        <!-- Credit Card Format -->
+        <Value pattern="^[^|]+\|(?'Reference'.+)$" xsi:type="MatchedPatternValue" groupName="Reference"/>
+        <!-- Debit Card Format -->
+        <Value pattern="(?'Reference'[A-Z]{2}/[0-9]{9})" xsi:type="MatchedPatternValue" groupName="Reference"/>
+      </Reference>
+    </Parser>
+  </FileParsers>
+  <RuleSets>
+    <RuleSet name="MyDefaultBank">
+      <!-- Assign opposite account -->
+      <Rule xsi:type="ModifyFieldsRule">
+        <Condition field="OppositeAccountNumber" xsi:type="PatternCondition" pattern="^12345678$"/>
+        
+        <OppositeAccountName xsi:type="FixedTransactionValueSource" value="My Bank"/>
+        <OppositeAccountIBAN xsi:type="NullTransactionValueSource"/>
+        <OppositeAccountNumber xsi:type="FixedTransactionValueSource" value="12345678"/>
+      </Rule>
+      <!-- Remove zero amount transactions -->
+      <Rule xsi:type="FilterRule">
+        <Condition xsi:type="AmountRangeCondition" min="0" max="0"/>
+      </Rule>
+    </RuleSet>
+    <RuleSet name="MyOtherBank">
+      <!-- Transaction without description -> use opposite account name as description -->
+      <Rule xsi:type="ModifyFieldsRule">
+        <Condition field="Description" xsi:type="MissingValueCondition"/>
+        <Description xsi:type="FieldTransactionValueSource" field="OppositeAccountName"/>
+      </Rule>
+    </RuleSet>
+  </RuleSets>
+</Configuration>

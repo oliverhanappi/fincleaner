@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:t="http://schemas.org/fincleaner/configuration/1.0"
+        targetNamespace="http://schemas.org/fincleaner/configuration/1.0"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <element name="Configuration">
+    <complexType>
+      <sequence>
+        <element name="Settings">
+          <complexType>
+            <sequence>
+              <element name="ExportCulture" type="string"/>
+              <element name="FallbackAccountName" type="string"/>
+              <element name="FallbackAccountIBAN" type="string"/>
+              <element name="FallbackAccountNumber" type="string"/>
+              <element name="FallbackDescription" type="string"/>
+            </sequence>
+          </complexType>
+        </element>
+        <element name="FilePatterns">
+          <complexType>
+            <sequence>
+              <element name="Pattern" maxOccurs="unbounded" type="t:FilePattern"/>
+            </sequence>
+            <attribute name="defaultParser" type="string" use="required"/>
+            <attribute name="defaultRuleSet" type="string"/>
+          </complexType>
+        </element>
+        <element name="FileParsers">
+          <complexType>
+            <sequence>
+              <element name="Parser" type="t:Parser" maxOccurs="unbounded"/>
+            </sequence>
+          </complexType>
+        </element>
+        <element name="RuleSets" minOccurs="0">
+          <complexType>
+            <sequence>
+              <element name="RuleSet" type="t:RuleSet" maxOccurs="unbounded"/>
+            </sequence>
+          </complexType>
+        </element>
+      </sequence>
+    </complexType>
+    <key name="ParserKey">
+      <selector xpath="t:FileParsers/t:Parser"/>
+      <field xpath="@name"/>
+    </key>
+    <keyref name="PatternParserRef" refer="t:ParserKey">
+      <selector xpath="t:FilePatterns/t:Pattern"/>
+      <field xpath="@parser"/>
+    </keyref>
+    <keyref name="DefaultParserRef" refer="t:ParserKey">
+      <selector xpath="t:FilePatterns"/>
+      <field xpath="@defaultParser"/>
+    </keyref>
+    <key name="RuleSetKey">
+      <selector xpath="t:RuleSets/t:RuleSet"/>
+      <field xpath="@name"/>
+    </key>
+    <keyref name="PatternRuleSetRef" refer="t:RuleSetKey">
+      <selector xpath="t:FilePatterns/t:Pattern"/>
+      <field xpath="@ruleSet"/>
+    </keyref>
+    <keyref name="DefaultRuleSetRef" refer="t:RuleSetKey">
+      <selector xpath="t:FilePatterns"/>
+      <field xpath="@defaultRuleSet"/>
+    </keyref>
+  </element>
+  
+  <complexType name="FilePattern">
+    <attribute name="pattern" type="string" use="required"/>
+    <attribute name="parser" type="string" use="required"/>
+    <attribute name="ruleSet" type="string"/>
+  </complexType>
+
+  <complexType name="Parser" abstract="true">
+    <attribute name="name" type="string"/>
+  </complexType>
+
+  <complexType name="CsvParser">
+    <complexContent>
+      <extension base="t:Parser">
+        <sequence>
+          <element name="Date" type="t:ValueSource"/>
+          <element name="Amount" type="t:ValueSource"/>
+
+          <element name="AssetAccountName" type="t:ValueSource"/>
+          <element name="AssetAccountIBAN" type="t:ValueSource"/>
+          <element name="AssetAccountNumber" type="t:ValueSource"/>
+
+          <element name="OppositeAccountName" type="t:ValueSource"/>
+          <element name="OppositeAccountIBAN" type="t:ValueSource"/>
+          <element name="OppositeAccountNumber" type="t:ValueSource"/>
+
+          <element name="Description" type="t:ValueSource" minOccurs="0"/>
+          <element name="Reference" type="t:ValueSource" minOccurs="0"/>
+        </sequence>
+        <attribute name="encoding" type="t:FileEncoding" use="required"/>
+        <attribute name="delimiter" type="string" use="required"/>
+        <attribute name="header" type="boolean" use="required"/>
+        <attribute name="culture" type="string" use="required"/>
+        <attribute name="quote" type="string" default="&quot;"/>
+        <attribute name="mode" default="RFC4180">
+          <simpleType>
+            <restriction base="string">
+              <enumeration value="Escape"/>
+              <enumeration value="NoEscape"/>
+              <enumeration value="RFC4180"/>
+            </restriction>
+          </simpleType>
+        </attribute>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <simpleType name="FileEncoding">
+    <restriction base="string">
+      <enumeration value="utf-8"/>
+      <enumeration value="utf-16"/>
+      <enumeration value="utf-16BE"/>
+      <enumeration value="ascii"/>
+      <enumeration value="iso-8859-1"/>
+    </restriction>
+  </simpleType>
+
+  <complexType name="ValueSource" abstract="true"/>
+  
+  <complexType name="ColumnValueSource">
+    <complexContent>
+      <extension base="t:ValueSource">
+        <attribute name="columnIndex" type="int" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="FileNameValueSource">
+    <complexContent>
+      <extension base="t:ValueSource"/>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="PatternValueSource">
+    <complexContent>
+      <extension base="t:ValueSource">
+        <sequence>
+          <element name="Source" type="t:ValueSource"/>
+          <element name="Value" type="t:PatternValue" maxOccurs="unbounded"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="PatternValue" abstract="true">
+    <attribute name="pattern" type="string" use="required"/>
+  </complexType>
+  
+  <complexType name="FixedPatternValue">
+    <complexContent>
+      <extension base="t:PatternValue">
+        <attribute name="value" type="string" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="MatchedPatternValue">
+    <complexContent>
+      <extension base="t:PatternValue">
+        <sequence>
+          <element name="Replace" minOccurs="0" maxOccurs="unbounded">
+            <complexType>
+              <attribute name="pattern" type="string" use="required"/>
+              <attribute name="value" type="string" use="required"/>
+            </complexType>
+          </element>
+        </sequence>
+        <attribute name="groupName" type="string" use="required"/>
+        <attribute name="trim" type="boolean"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="RuleSet">
+    <sequence>
+      <element name="Rule" type="t:Rule" maxOccurs="unbounded"/>
+    </sequence>
+    <attribute name="name" type="string" use="required"/>
+  </complexType>
+  
+  <complexType name="Rule" abstract="true">
+    <sequence>
+      <element name="Condition" type="t:TransactionCondition" minOccurs="0" maxOccurs="unbounded"/>
+    </sequence>
+    <attribute name="conditionMatchingMode" type="t:ConditionMatchingMode" default="all"/>
+  </complexType>
+  
+  <simpleType name="ConditionMatchingMode">
+    <restriction base="string">
+      <enumeration value="all"/>
+      <enumeration value="any"/>
+    </restriction>
+  </simpleType>
+  
+  <complexType name="ModifyFieldsRule">
+    <complexContent>
+      <extension base="t:Rule">
+        <sequence>
+          <element name="Date" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="Amount" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="AssetAccountName" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="AssetAccountIBAN" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="AssetAccountNumber" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="OppositeAccountName" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="OppositeAccountIBAN" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="OppositeAccountNumber" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="Description" type="t:TransactionValueSource" minOccurs="0"/>
+          <element name="Reference" type="t:TransactionValueSource" minOccurs="0"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="FilterRule">
+    <complexContent>
+      <extension base="t:Rule" />
+    </complexContent>
+  </complexType>
+  
+  <complexType name="TransactionCondition" abstract="true"/>
+
+  <complexType name="AmountRangeCondition">
+    <complexContent>
+      <extension base="t:TransactionCondition">
+        <attribute name="min" type="int"/>
+        <attribute name="minInclusive" type="boolean" default="true"/>
+        <attribute name="max" type="int"/>
+        <attribute name="maxInclusive" type="boolean" default="true"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="FieldTransactionCondition" abstract="true">
+    <complexContent>
+      <extension base="t:TransactionCondition">
+        <attribute name="field" type="t:TransactionField" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="PatternCondition">
+    <complexContent>
+      <extension base="t:FieldTransactionCondition">
+        <attribute name="pattern" type="string" use="required"/>
+        <attribute name="ignoreCase" type="boolean" default="true"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="KeywordCondition">
+    <complexContent>
+      <extension base="t:FieldTransactionCondition">
+        <attribute name="keyword" type="string" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="MissingValueCondition">
+    <complexContent>
+      <extension base="t:FieldTransactionCondition"/>
+    </complexContent>
+  </complexType>
+  
+  <simpleType name="TransactionField">
+    <restriction base="string">
+      <enumeration value="AssetAccountName"/>
+      <enumeration value="AssetAccountIBAN"/>
+      <enumeration value="AssetAccountNumber"/>
+      <enumeration value="OppositeAccountName"/>
+      <enumeration value="OppositeAccountIBAN"/>
+      <enumeration value="OppositeAccountNumber"/>
+      <enumeration value="Description"/>
+      <enumeration value="Reference"/>
+    </restriction>
+  </simpleType>
+  
+  <complexType name="TransactionValueSource" abstract="true"/>
+  
+  <complexType name="NullTransactionValueSource">
+    <complexContent>
+      <extension base="t:TransactionValueSource" />
+    </complexContent>
+  </complexType>
+  
+  <complexType name="FixedTransactionValueSource">
+    <complexContent>
+      <extension base="t:TransactionValueSource">
+        <attribute name="value" type="string" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="FieldTransactionValueSource">
+    <complexContent>
+      <extension base="t:TransactionValueSource">
+        <attribute name="field" type="t:TransactionField" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+  
+  <complexType name="ReplaceTransactionValueSource">
+    <complexContent>
+      <extension base="t:TransactionValueSource">
+        <sequence>
+          <element name="Source" type="t:TransactionValueSource"/>
+        </sequence>
+        <attribute name="pattern" type="string" use="required"/>
+        <attribute name="ignoreCase" type="boolean" default="true"/>
+        <attribute name="replacement" type="string" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+</schema>
