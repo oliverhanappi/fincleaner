@@ -21,4 +21,4 @@ CSV files, e.g. by drag & dropping all files onto the application.
 
 ## Documentation
 
-There is currently no documentation at the moment.
+Unfortunately there is currently no documentation available.
