@@ -11,7 +11,7 @@ public class CsvFileParserColumnValueSource : ICsvFileParserValueSource
     ColumnIndex = columnIndex;
   }
   
-  public T GetValue<T>(string path, IReaderRow row)
+  public T? GetValue<T>(string path, IReaderRow row)
   {
     return row.GetField<T>(ColumnIndex);
   }
